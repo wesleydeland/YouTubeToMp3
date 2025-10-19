@@ -61,7 +61,7 @@ jobs:
 
       - name: Package
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          if [ "$RUNNER_OS" = "Windows" ]; then
             Compress-Archive -Path "./publish/*" -DestinationPath "YouTubeToMp3-${{ matrix.target }}.zip"
           else
             zip -r "YouTubeToMp3-${{ matrix.target }}.zip" ./publish/*
