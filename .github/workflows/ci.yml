@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        dotnet-version: ['8.0.x']
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+        global-json-file: global.json
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      working-directory: YouTubeToMp3
+      
+    - name: Build
+      run: dotnet build --no-restore
+      working-directory: YouTubeToMp3
+      
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+      working-directory: YouTubeToMp3

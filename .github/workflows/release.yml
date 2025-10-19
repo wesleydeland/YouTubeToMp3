@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release v${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+
+  build-release:
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        target: [linux-x64, win-x64, osx-x64]
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: windows-latest
+            target: win-x64
+          - os: macos-latest
+            target: osx-x64
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          global-json-file: global.json
+
+      - name: Publish
+        run: |
+          dotnet publish YouTubeToMp3/YouTubeToMp3.csproj -c Release -r ${{ matrix.target }} --self-contained true -p:PublishSingleFile=true -o ./publish
+
+      - name: Package
+        run: |
+          if [ "${{ matrix.target }}" = "win-x64" ]; then
+            Compress-Archive -Path "./publish/*" -DestinationPath "YouTubeToMp3-${{ matrix.target }}.zip"
+          else
+            zip -r "YouTubeToMp3-${{ matrix.target }}.zip" ./publish/*
+          fi
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./YouTubeToMp3-${{ matrix.target }}.zip
+          asset_name: YouTubeToMp3-${{ matrix.target }}.zip
+          asset_content_type: application/zip
