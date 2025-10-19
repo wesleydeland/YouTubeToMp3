@@ -63,7 +63,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path './output/*' -DestinationPath './output.zip'
+          Compress-Archive -Path './publish/*' -DestinationPath './YoutubeToMp3-${{ matrix.target }}.zip'
       - name: Package
         if: runner.os != 'Windows' 
         run: |
