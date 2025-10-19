@@ -66,6 +66,7 @@ jobs:
           else
             zip -r "YouTubeToMp3-${{ matrix.target }}.zip" ./publish/*
           fi
+        shell: bash
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
