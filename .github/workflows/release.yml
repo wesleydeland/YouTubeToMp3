@@ -60,7 +60,7 @@ jobs:
 
       - name: Package
         run: |
-          if [ "${{ matrix.target }}" = "win-x64" ]; then
+          if [ "${{ matrix.target }}" = "windows-latest" ]; then
             Compress-Archive -Path "./publish/*" -DestinationPath "YouTubeToMp3-${{ matrix.target }}.zip"
           else
             zip -r "YouTubeToMp3-${{ matrix.target }}.zip" ./publish/*
