@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="YouTubeToMp3.MainWindow"
+        Title="YouTube to MP3 Converter" Width="600" Height="400">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+        <TextBlock Grid.Row="0" 
+                   Text="YouTube to MP3 Converter" 
+                   HorizontalAlignment="Center" 
+                   FontSize="24" 
+                   Margin="10" />
+        
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10">
+            <TextBox Name="YouTubeUrlInput" 
+                     Watermark="Paste YouTube URL here..." 
+                     Width="400" 
+                     Margin="0,0,10,0" />
+            <Button Name="DownloadButton" 
+                    Content="Download MP3" 
+                    Width="120" Click="DownloadButton_Click"/>
+        </StackPanel>
+        
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10">
+            <TextBlock Text="Output Directory: " VerticalAlignment="Center" />
+            <TextBox Name="OutputDirectoryInput" 
+                     Watermark="Select output directory..." 
+                     Width="300" 
+                     Margin="5,0" 
+                     IsReadOnly="True"/>
+            <Button Name="BrowseOutputButton" 
+                    Content="Browse..." 
+                    Width="80" 
+                    Margin="5,0,0,0" Click="BrowseOutputButton_Click"/>
+        </StackPanel>
+        
+        <ProgressBar Name="DownloadProgressBar" 
+                     Grid.Row="3" 
+                     Height="20" 
+                     Margin="10" 
+                     Minimum="0" 
+                     Maximum="100" 
+                     IsVisible="False" />
+        
+        <TextBox Name="StatusTextBox" 
+                 Grid.Row="4" 
+                 Margin="10" 
+                 IsReadOnly="True" 
+                 TextWrapping="Wrap" 
+                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+    </Grid>
+</Window>
