@@ -59,13 +59,15 @@ jobs:
         run: |
           dotnet publish YouTubeToMp3/YouTubeToMp3.csproj -c Release -r ${{ matrix.target }} --self-contained true -p:PublishSingleFile=true -o ./publish
 
-      - name: Package
+      - name: Compress output (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            Compress-Archive -Path "./publish/*" -DestinationPath "YouTubeToMp3-${{ matrix.target }}.zip"
-          else
-            zip -r "YouTubeToMp3-${{ matrix.target }}.zip" ./publish/*
-          fi
+          Compress-Archive -Path './output/*' -DestinationPath './output.zip'
+      - name: Package
+        if: runner.os != 'Windows' 
+        run: |
+          zip -r "YouTubeToMp3-${{ matrix.target }}.zip" ./publish/*
         shell: bash
 
       - name: Upload Release Asset
