@@ -20,7 +20,7 @@ namespace YouTubeToMp3
 
         private async void DownloadButton_Click(object sender, RoutedEventArgs e)
         {
-            string youtubeUrl = YouTubeUrlInput.Text?.Trim();
+            string youtubeUrl = YouTubeUrlInput.Text?.Trim() ?? string.Empty;
             
             if (string.IsNullOrEmpty(youtubeUrl))
             {
@@ -34,7 +34,7 @@ namespace YouTubeToMp3
                 return;
             }
 
-            string outputDir = OutputDirectoryInput.Text?.Trim();
+            string outputDir = OutputDirectoryInput.Text?.Trim() ?? string.Empty;
             if (string.IsNullOrEmpty(outputDir) || !Directory.Exists(outputDir))
             {
                 StatusTextBox.Text = "Please select a valid output directory";
@@ -117,14 +117,14 @@ namespace YouTubeToMp3
         private async Task ReadOutputStream(StreamReader reader)
         {
             string line;
-            while ((line = await reader.ReadLineAsync()) != null)
+            while ((line = await reader.ReadLineAsync() ?? string.Empty) != null)
             {
                 // Update UI on the main thread
-                Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     // Update progress if line contains progress information
                     UpdateProgressFromLine(line);
-                    
+
                     // Append the line to status
                     StatusTextBox.Text += line + "\n";
                     // Auto-scroll to the bottom
