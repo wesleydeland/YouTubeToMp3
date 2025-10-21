@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Avalonia.Platform.Storage;
 
 namespace YouTubeToMp3
 {
@@ -206,7 +207,7 @@ namespace YouTubeToMp3
 
         private static bool IsInPath(string fileName)
         {
-            string[] paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? new string[0];
+            string[] paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
             
             foreach (string path in paths)
             {
@@ -238,15 +239,21 @@ namespace YouTubeToMp3
 
         private async void BrowseOutputButton_Click(object sender, RoutedEventArgs e)
         {
-            var openFolderDialog = new OpenFolderDialog
+            var topLevel = TopLevel.GetTopLevel(this);
+
+            var folderPickerOpenOptions = new FolderPickerOpenOptions()
             {
-                Title = "Select Output Directory"
+                Title = "Select Output Directory",
+                AllowMultiple = false
             };
+
+            var result = await topLevel!.StorageProvider.OpenFolderPickerAsync(folderPickerOpenOptions);
+
+            var path = result.FirstOrDefault()?.TryGetLocalPath() ?? string.Empty;
             
-            string result = await openFolderDialog.ShowAsync(this) ?? string.Empty;
-            if (!string.IsNullOrEmpty(result))
+            if (!string.IsNullOrEmpty(path))
             {
-                OutputDirectoryInput.Text = result;
+                OutputDirectoryInput.Text = path;
             }
         }
     }
