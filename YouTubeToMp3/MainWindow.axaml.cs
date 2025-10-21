@@ -5,6 +5,7 @@ using Avalonia.Threading;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -137,7 +138,7 @@ namespace YouTubeToMp3
         {
             // Handle different types of progress lines from yt-dlp
             // Format 1: [download]  10.4% of 12.50MiB at 470.45KiB/s ETA 00:21
-            var match = Regex.Match(line, @"\[download\].*?(\d+\.?\d*)%");
+            var match = Regex.Match(line, @"\[download\].*?(\d+\.?\d*)%", RegexOptions.None, TimeSpan.FromMilliseconds(100));
             if (match.Success)
             {
                 if (double.TryParse(match.Groups[1].Value, out double progressValue1))
@@ -148,7 +149,7 @@ namespace YouTubeToMp3
             }
 
             // Format 2: [download]  10.4% (1.30MiB at 470.45KiB/s)
-            match = Regex.Match(line, @"\[download\]\s*(\d+\.?\d*)%\s*\(");
+            match = Regex.Match(line, @"\[download\]\s*(\d+\.?\d*)%\s*\(", RegexOptions.None, TimeSpan.FromMilliseconds(100));
             if (match.Success)
             {
                 if (double.TryParse(match.Groups[1].Value, out double progressValue2))
@@ -159,7 +160,7 @@ namespace YouTubeToMp3
             }
 
             // Format 3: [download]  1.30MiB at 470.45KiB/s (10.4%)
-            match = Regex.Match(line, @"\((\d+\.?\d*)%\)");
+            match = Regex.Match(line, @"\((\d+\.?\d*)%\)", RegexOptions.None, TimeSpan.FromMilliseconds(100));
             if (match.Success)
             {
                 if (double.TryParse(match.Groups[1].Value, out double progressValue3))
@@ -172,10 +173,10 @@ namespace YouTubeToMp3
         private async Task ReadErrorStream(StreamReader reader)
         {
             string line;
-            while ((line = await reader.ReadLineAsync()) != null)
+            while ((line = await reader.ReadLineAsync() ?? String.Empty) != null)
             {
                 // Update UI on the main thread
-                Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     // This is usually for errors, just append to status
                     StatusTextBox.Text += line + "\n";
@@ -185,7 +186,7 @@ namespace YouTubeToMp3
             }
         }
 
-        private string FindYtDlp()
+        private static string FindYtDlp()
         {
             // Check common locations for yt-dlp
             string[] possiblePaths = {
@@ -199,18 +200,11 @@ namespace YouTubeToMp3
                 "./yt-dlp.exe"  // Local directory on Windows
             };
 
-            foreach (string path in possiblePaths)
-            {
-                if (File.Exists(path) || IsInPath(Path.GetFileNameWithoutExtension(path)))
-                {
-                    return path;
-                }
-            }
-
-            return string.Empty;
+            return possiblePaths.FirstOrDefault(p => File.Exists(p) || IsInPath(Path.GetFileNameWithoutExtension(p))) ??
+                   string.Empty;
         }
 
-        private bool IsInPath(string fileName)
+        private static bool IsInPath(string fileName)
         {
             string[] paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? new string[0];
             
@@ -235,7 +229,7 @@ namespace YouTubeToMp3
             return false;
         }
 
-        private bool IsValidUrl(string url)
+        private static bool IsValidUrl(string url)
         {
             return Uri.TryCreate(url, UriKind.Absolute, out Uri? uriResult) &&
                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps) &&
@@ -249,7 +243,7 @@ namespace YouTubeToMp3
                 Title = "Select Output Directory"
             };
             
-            string result = await openFolderDialog.ShowAsync(this);
+            string result = await openFolderDialog.ShowAsync(this) ?? string.Empty;
             if (!string.IsNullOrEmpty(result))
             {
                 OutputDirectoryInput.Text = result;
