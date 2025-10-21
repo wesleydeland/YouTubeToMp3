@@ -162,12 +162,10 @@ namespace YouTubeToMp3
 
             // Format 3: [download]  1.30MiB at 470.45KiB/s (10.4%)
             match = Regex.Match(line, @"\((\d+\.?\d*)%\)", RegexOptions.None, TimeSpan.FromMilliseconds(100));
-            if (match.Success)
+            
+            if (match.Success && double.TryParse(match.Groups[1].Value, out double progressValue3))
             {
-                if (double.TryParse(match.Groups[1].Value, out double progressValue3))
-                {
-                    DownloadProgressBar.Value = progressValue3;
-                }
+                DownloadProgressBar.Value = progressValue3;
             }
         }
 
