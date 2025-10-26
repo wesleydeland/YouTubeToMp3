@@ -25,12 +25,9 @@ jobs:
         
     - name: Restore dependencies
       run: dotnet restore
-      working-directory: YouTubeToMp3
       
     - name: Build
       run: dotnet build --no-restore
-      working-directory: YouTubeToMp3
       
     - name: Test with Coverage
-      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --settings ./Tests.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
-      working-directory: YouTubeToMp3
+      run: dotnet test --no-build --collect:"XPlat Code Coverage" --settings ./Tests.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
