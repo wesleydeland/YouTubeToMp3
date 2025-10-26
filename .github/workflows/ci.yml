@@ -30,4 +30,4 @@ jobs:
       run: dotnet build --no-restore
       
     - name: Test with Coverage
-      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --settings ./Tests.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+      run: dotnet test --no-build --collect:"XPlat Code Coverage" --settings ./Tests.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
