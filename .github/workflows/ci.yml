@@ -31,6 +31,6 @@ jobs:
       run: dotnet build --no-restore
       working-directory: YouTubeToMp3
       
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+    - name: Test with Coverage
+      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --settings ./Tests.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
       working-directory: YouTubeToMp3
