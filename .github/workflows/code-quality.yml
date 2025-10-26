@@ -44,5 +44,5 @@ jobs:
         run: |
           ${{ runner.temp }}\\scanner\\dotnet-sonarscanner begin /k:"wesleydeland_YouTubeToMp3" /o:"wesleydeland" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="TestResults/coverage.opencover.xml"
           dotnet build
-          dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --settings ./Tests.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="TestResults/"
+          dotnet test --no-build --collect:"XPlat Code Coverage" --settings ./Tests.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="TestResults/"
           ${{ runner.temp }}\\scanner\\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
