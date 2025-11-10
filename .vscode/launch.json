@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch YouTubeToMp3.BlazorFrontend (.NET 9)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/YouTubeToMp3.BlazorFrontend/bin/Debug/net9.0/YouTubeToMp3.BlazorFrontend.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/YouTubeToMp3.BlazorFrontend",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "DOTNET_ENVIRONMENT": "Development"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/YouTubeToMp3.BlazorFrontend/Views"
+            },
+            "justMyCode": true
+        }
+    ]
+}
