@@ -1,0 +1,506 @@
+﻿@page "/"
+
+@using System.Diagnostics
+@using System.Text.RegularExpressions
+@inject ILogger<Index> Logger
+@inject IWebHostEnvironment Env
+@inject DownloadSessionStore DownloadSessions
+@inject NavigationManager Nav
+
+<PageTitle>YouTube to MP3</PageTitle>
+
+<div class="app-root">
+    <div class="yt-page-shell">
+        <div class="yt-card">
+            <div class="yt-header">
+                <div class="yt-logo-orbit">
+                    <span>YT</span>
+                </div>
+                <div class="yt-title-stack">
+                    <div class="yt-title">
+                        <span>YouTube to MP3</span>
+                        <span class="yt-title-highlight">Live Converter</span>
+                    </div>
+                    <div class="yt-subtitle">
+                        Drop a link. Pick a vibe. Download straight from your browser.
+                    </div>
+                </div>
+            </div>
+
+            <div class="yt-grid">
+                <!-- Left: URL -->
+                <div>
+                    <div class="yt-block-label">
+                        <span class="bullet"></span>
+                        <span>Source</span>
+                        <span class="yt-chip-label">Paste a YouTube URL to begin</span>
+                    </div>
+                    <div class="yt-input-shell">
+                        <input class="yt-input @(string.IsNullOrEmpty(UrlError) ? "" : "yt-input-error")"
+                               placeholder="https://www.youtube.com/watch?v=..."
+                               @bind="YouTubeUrl" />
+                        @if (!string.IsNullOrEmpty(UrlError))
+                        {
+                            <div class="yt-error-text">@UrlError</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Right: Options and actions -->
+                <div>
+                    <div class="yt-block-label">
+                        <span class="bullet"></span>
+                        <span>Audio profile</span>
+                        <span class="yt-chip-label">Format & quality</span>
+                    </div>
+                    <div class="yt-options-row">
+                        <select class="yt-select" @bind="SelectedAudioFormat">
+                            <option value="mp3">MP3 • Classic</option>
+                            <option value="m4a">M4A • Compact</option>
+                            <option value="opus">OPUS • Nerd Mode</option>
+                        </select>
+
+                        <select class="yt-select" @bind="SelectedQuality">
+                            <option value="0">Best</option>
+                            <option value="3">High</option>
+                            <option value="5">Medium</option>
+                            <option value="9">Smol</option>
+                        </select>
+                    </div>
+
+                    <div class="yt-actions">
+                        <button class="yt-btn-primary"
+                                @onclick="StartDownloadAsync"
+                                disabled="@IsRunning">
+                            @if (IsRunning)
+                            {
+                                <div class="yt-spinner"></div>
+                                <span>Converting...</span>
+                            }
+                            else
+                            {
+                                <span class="icon">▶</span>
+                                <span>Convert & Download</span>
+                            }
+                        </button>
+
+                        @if (IsRunning)
+                        {
+                            <button class="yt-btn-ghost" @onclick="CancelRequestedAsync">
+                                <span>Cancel Run</span>
+                            </button>
+                        }
+                        else if (LogLines.Count > 0)
+                        {
+                            <button class="yt-btn-ghost" @onclick="ClearLog">
+                                <span>Clear Log</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="yt-progress-shell">
+                <div class="yt-progress-bar" style="width:@Progress%;">
+                    @if (Progress > 3)
+                    {
+                        @($"{Progress:F0}%")
+                    }
+                </div>
+            </div>
+            <div class="yt-status-line">
+                Status: @CurrentStatus
+                @if (!string.IsNullOrEmpty(DownloadLinkToken))
+                {
+                    <span>&nbsp;• Ready: your download should start automatically. If not,&nbsp;</span>
+                    <a href="@GetDownloadUrl()" class="yt-manual-link">click here</a>
+                }
+            </div>
+
+            <!-- Logs -->
+            <div class="yt-log-shell">
+                <div class="hint">Live console • yt-dlp output</div>
+                @if (LogLines.Count == 0)
+                {
+                    <div class="yt-log-line">Waiting for a URL. Logs will appear here when a conversion starts.</div>
+                }
+                else
+                {
+                    @foreach (var line in LogLines)
+                    {
+                        var css = line.StartsWith("[ERR]") ? "yt-log-line err" : "yt-log-line";
+                        <div class="@css">@line</div>
+                    }
+                }
+            </div>
+
+            <div class="yt-footnote">
+                Uses yt-dlp on the server and streams the resulting file directly to your browser.
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string YouTubeUrl { get; set; } = string.Empty;
+    private string SelectedAudioFormat { get; set; } = "mp3";
+    private string SelectedQuality { get; set; } = "0";
+    private string UrlError { get; set; } = string.Empty;
+    private bool IsRunning { get; set; }
+    private double Progress { get; set; }
+    private string CurrentStatus { get; set; } = "Idle";
+    private List<string> LogLines { get; set; } = new();
+    private string? DownloadLinkToken { get; set; }
+
+    private CancellationTokenSource? _cts;
+
+    private async Task StartDownloadAsync()
+    {
+        UrlError = string.Empty;
+        Progress = 0;
+        DownloadLinkToken = null;
+        CurrentStatus = "Validating input...";
+        StateHasChanged();
+
+        if (string.IsNullOrWhiteSpace(YouTubeUrl))
+        {
+            UrlError = "Drop in a YouTube URL to get started.";
+            CurrentStatus = "Validation failed.";
+            return;
+        }
+
+        if (!IsValidYoutubeUrl(YouTubeUrl))
+        {
+            UrlError = "That doesn't look like a valid youtube.com / youtu.be link.";
+            CurrentStatus = "Validation failed.";
+            return;
+        }
+
+        IsRunning = true;
+        _cts = new CancellationTokenSource();
+        LogLines.Clear();
+        AppendLog("[info] Starting conversion...");
+        CurrentStatus = "Spawning yt-dlp...";
+        StateHasChanged();
+
+        try
+        {
+            // Run yt-dlp to a temp file and get a one-time token for browser download.
+            var token = await RunYtDlpAndRegisterAsync(YouTubeUrl.Trim(), _cts.Token);
+            if (!string.IsNullOrEmpty(token))
+            {
+                DownloadLinkToken = token;
+                CurrentStatus = "Ready. Triggering browser download...";
+                StateHasChanged();
+
+                // Navigate to the download endpoint; this will prompt the browser to download.
+                var url = GetDownloadUrl();
+                Nav.NavigateTo(url, forceLoad: true);
+            }
+            else
+            {
+                if (!_cts.IsCancellationRequested)
+                {
+                    CurrentStatus = "No file produced. Check logs for details.";
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            AppendLog("[info] Download canceled.");
+            CurrentStatus = "Canceled.";
+        }
+        catch (Exception ex)
+        {
+            AppendLog("[ERR] " + ex.Message);
+            CurrentStatus = "Error during download.";
+            Logger.LogError(ex, "Error running yt-dlp");
+        }
+        finally
+        {
+            IsRunning = false;
+            _cts?.Dispose();
+            _cts = null;
+            StateHasChanged();
+        }
+    }
+
+    private Task CancelRequestedAsync()
+    {
+        if (_cts is not null && IsRunning)
+        {
+            AppendLog("[info] Cancel requested...");
+            _cts.Cancel();
+        }
+        return Task.CompletedTask;
+    }
+
+    private void ClearLog()
+    {
+        LogLines.Clear();
+        CurrentStatus = "Idle";
+        Progress = 0;
+        DownloadLinkToken = null;
+    }
+
+    /// <summary>
+    /// Runs yt-dlp to a temporary directory, registers the resulting file in DownloadSessionStore,
+    /// and returns a one-time token that the browser can use to download it.
+    /// </summary>
+    private async Task<string?> RunYtDlpAndRegisterAsync(string url, CancellationToken cancellationToken)
+    {
+        var ytDlpPath = FindYtDlp();
+        if (string.IsNullOrEmpty(ytDlpPath))
+        {
+            AppendLog("[ERR] yt-dlp not found. Install yt-dlp and ensure it is in PATH.");
+            CurrentStatus = "yt-dlp not found.";
+            return null;
+        }
+
+        var qualityArg = SelectedQuality switch
+        {
+            "0" => "0",
+            "3" => "3",
+            "5" => "5",
+            "9" => "9",
+            _ => "0"
+        };
+
+        // Create a temp directory for this run
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ytmp3-blazor");
+        Directory.CreateDirectory(tempRoot);
+        var runDir = Path.Combine(tempRoot, Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(runDir);
+
+        var outputTemplate = Path.Combine(runDir, "%(title)s.%(ext)s");
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = ytDlpPath,
+            Arguments = $"-x --audio-format {SelectedAudioFormat} --audio-quality {qualityArg} -o \"{outputTemplate}\" --newline \"{url}\"",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        AppendLog($"[info] Using yt-dlp: {ytDlpPath}");
+        AppendLog("[info] Working in temp sandbox...");
+
+        using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = false };
+
+        if (!process.Start())
+        {
+            AppendLog("[ERR] Failed to start yt-dlp process.");
+            CurrentStatus = "Failed to start yt-dlp.";
+            return null;
+        }
+
+        var outputTask = Task.Run(async () =>
+        {
+            while (!process.StandardOutput.EndOfStream)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var line = await process.StandardOutput.ReadLineAsync();
+                if (line is null) break;
+                HandleYtDlpLine(line, isError: false);
+            }
+        }, cancellationToken);
+
+        var errorTask = Task.Run(async () =>
+        {
+            while (!process.StandardError.EndOfStream)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var line = await process.StandardError.ReadLineAsync();
+                if (line is null) break;
+                HandleYtDlpLine(line, isError: true);
+            }
+        }, cancellationToken);
+
+        await Task.WhenAll(outputTask, errorTask);
+        await process.WaitForExitAsync(cancellationToken);
+
+        if (process.ExitCode != 0)
+        {
+            AppendLog($"[ERR] yt-dlp exited with code {process.ExitCode}.");
+            CurrentStatus = "yt-dlp reported an error.";
+            SafeCleanup(runDir);
+            return null;
+        }
+
+        // Find the resulting file (expect exactly one primary output)
+        var files = Directory.GetFiles(runDir);
+        if (files.Length == 0)
+        {
+            AppendLog("[ERR] No output file was produced by yt-dlp.");
+            SafeCleanup(runDir);
+            return null;
+        }
+
+        // Prefer audio-like extensions if multiple files exist
+        var preferred = files
+            .OrderByDescending(f =>
+            {
+                var ext = Path.GetExtension(f).ToLowerInvariant();
+                return ext is ".mp3" or ".m4a" or ".opus" ? 2 : 1;
+            })
+            .First();
+
+        AppendLog($"[info] Output ready: {Path.GetFileName(preferred)}");
+        Progress = 100;
+        CurrentStatus = "Completed. Preparing browser download link...";
+
+        var contentType = GetContentTypeFromExtension(Path.GetExtension(preferred));
+        var token = DownloadSessions.Add(preferred, contentType);
+        return token;
+    }
+
+    private readonly object _logLock = new();
+
+    private void HandleYtDlpLine(string line, bool isError)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+            return;
+
+        UpdateProgressFromLine(line);
+
+        var prefixed = (isError ? "[ERR] " : "[log] ") + line;
+
+        // Marshal collection updates to the Blazor sync context and lock during mutation
+        _ = InvokeAsync(() =>
+        {
+            lock (_logLock)
+            {
+                LogLines.Add(prefixed);
+                if (LogLines.Count > 400)
+                {
+                    LogLines.RemoveRange(0, LogLines.Count - 400);
+                }
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void AppendLog(string message, bool isError = false)
+    {
+        // Ensure no concurrent modification while the UI enumerates LogLines
+        _ = InvokeAsync(() =>
+        {
+            lock (_logLock)
+            {
+                LogLines.Add(message);
+                if (LogLines.Count > 400)
+                {
+                    LogLines.RemoveRange(0, LogLines.Count - 400);
+                }
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void UpdateProgressFromLine(string line)
+    {
+        var match = Regex.Match(line, @"\[download\].*?(\d+\.?\d*)%");
+        if (!match.Success)
+        {
+            match = Regex.Match(line, @"\((\d+\.?\d*)%\)");
+        }
+
+        if (match.Success && double.TryParse(match.Groups[1].Value, out var value))
+        {
+            Progress = Math.Clamp(value, 0, 100);
+        }
+    }
+
+    private static bool IsValidYoutubeUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+
+        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            return false;
+
+        var host = uri.Host.ToLowerInvariant();
+        return host.Contains("youtube.com") || host.Contains("youtu.be");
+    }
+
+    private static string FindYtDlp()
+    {
+        var candidates = new[]
+        {
+            "/opt/homebrew/bin/yt-dlp",
+            "/usr/local/bin/yt-dlp",
+            "/usr/bin/yt-dlp",
+            "C:\\yt-dlp\\yt-dlp.exe",
+            "./yt-dlp",
+            "./yt-dlp.exe",
+            "yt-dlp",
+            "yt-dlp.exe"
+        };
+
+        foreach (var c in candidates)
+        {
+            try
+            {
+                if (Path.IsPathRooted(c))
+                {
+                    if (File.Exists(c))
+                        return c;
+                }
+                else if (c is "yt-dlp" or "yt-dlp.exe")
+                {
+                    // Let the shell/OS resolve these; return as-is.
+                    return c;
+                }
+                else
+                {
+                    var envPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+                    foreach (var p in envPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var full = Path.Combine(p, c);
+                        if (File.Exists(full))
+                            return full;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore invalid paths
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static void SafeCleanup(string dir)
+    {
+        try
+        {
+            if (Directory.Exists(dir))
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+        }
+        catch
+        {
+            // ignore cleanup issues
+        }
+    }
+
+    private static string GetContentTypeFromExtension(string ext)
+    {
+        ext = ext.ToLowerInvariant();
+        return ext switch
+        {
+            ".mp3" => "audio/mpeg",
+            ".m4a" => "audio/mp4",
+            ".opus" => "audio/ogg",
+            _ => "application/octet-stream"
+        };
+    }
+
+    private string GetDownloadUrl()
+        => $"/download/{DownloadLinkToken}";
+}
