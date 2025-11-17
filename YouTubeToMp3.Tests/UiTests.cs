@@ -45,7 +45,7 @@ public class UiTests
         var downloadButton = window.FindControl<Button>("DownloadButton");
 
         // Act
-        youTubeUrlInput.Text = string.Empty;
+        youTubeUrlInput?.Text = string.Empty;
         
         // Simulate the validation that happens when clicking the download button
         var isValidUrl = CallIsValidUrlStatic(string.Empty);
@@ -83,7 +83,7 @@ public class UiTests
         var expectedPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         // Assert
-        Assert.Equal(expectedPath, outputDirectoryInput.Text);
+        Assert.Equal(expectedPath, outputDirectoryInput?.Text);
     }
 
     // Helper method to access static method via reflection
