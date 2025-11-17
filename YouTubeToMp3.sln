@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YouTubeToMp3.Tests", "YouTu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YouTubeToMp3.BlazorFrontend", "YouTubeToMp3.BlazorFrontend\YouTubeToMp3.BlazorFrontend.csproj", "{1F3E697A-A4BE-4FAF-B161-3882A523CA05}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YouTubeToMp3.AppHost", "YouTubeToMp3.AppHost\YouTubeToMp3.AppHost.csproj", "{E80975EB-A0FB-4AE9-B40B-225F23E0101B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YouTubeToMp3.ServiceDefaults", "YouTubeToMp3.ServiceDefaults\YouTubeToMp3.ServiceDefaults.csproj", "{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +59,30 @@ Global
 		{1F3E697A-A4BE-4FAF-B161-3882A523CA05}.Release|x64.Build.0 = Release|Any CPU
 		{1F3E697A-A4BE-4FAF-B161-3882A523CA05}.Release|x86.ActiveCfg = Release|Any CPU
 		{1F3E697A-A4BE-4FAF-B161-3882A523CA05}.Release|x86.Build.0 = Release|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Debug|x64.Build.0 = Debug|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Debug|x86.Build.0 = Debug|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Release|x64.ActiveCfg = Release|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Release|x64.Build.0 = Release|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Release|x86.ActiveCfg = Release|Any CPU
+		{E80975EB-A0FB-4AE9-B40B-225F23E0101B}.Release|x86.Build.0 = Release|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Debug|x64.Build.0 = Debug|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Debug|x86.Build.0 = Debug|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Release|x64.ActiveCfg = Release|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Release|x64.Build.0 = Release|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Release|x86.ActiveCfg = Release|Any CPU
+		{2CFA4490-EADF-4D7D-B10C-90F5EBDE1BF7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
