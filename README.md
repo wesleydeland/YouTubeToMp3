@@ -12,7 +12,7 @@ A cross-platform desktop application to convert YouTube videos to MP3 audio file
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) installed and available in your PATH
 
 ### Installing yt-dlp
